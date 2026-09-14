@@ -1,0 +1,9 @@
+# Categraf exec 插件配置（prometheus 格式）
+# 放置到 <categraf>/conf/input.exec/ 下由角色渲染。
+[[instances]]
+commands = [
+    "{{ hw_mon_script_path }} --format prometheus --log-file {{ hw_mon_log_file }} --patterns {{ hw_mon_patterns_path }} --state-dir {{ hw_mon_state_dir }}"
+]
+timeout = 10
+data_format = "prometheus"
+interval = "60s"

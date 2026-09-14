@@ -1,0 +1,7 @@
+---
+- name: 部署硬件告警联动服务
+  hosts: linkage
+  gather_facts: true
+  become: true
+  roles:
+    - linkage

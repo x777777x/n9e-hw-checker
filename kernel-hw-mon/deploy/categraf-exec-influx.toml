@@ -1,0 +1,12 @@
+# Categraf exec 插件配置（influx 格式）
+#
+# 放置位置: <categraf>/conf/input.exec/kernel-hw-mon-influx.toml
+# 与 prometheus 版本二选一，不要同时启用，避免重复采集。
+
+[[instances]]
+commands = [
+    "/opt/kernel-hw-mon/kernel-hw-mon.sh --format influx --log-file /var/log/kernel-hw-errors.log --patterns /etc/kernel-hw-mon/patterns.conf --state-dir /var/lib/kernel-hw-mon"
+]
+timeout = 10
+data_format = "influx"
+interval = "60s"

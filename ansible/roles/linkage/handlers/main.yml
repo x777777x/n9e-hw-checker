@@ -1,0 +1,6 @@
+---
+- name: restart kernel-hw-linkage
+  ansible.builtin.systemd:
+    name: kernel-hw-linkage
+    state: restarted
+    daemon_reload: true

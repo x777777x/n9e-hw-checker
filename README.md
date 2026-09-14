@@ -41,6 +41,8 @@ docker run --rm -v "$PWD/kernel-hw-mon":/work:ro rockylinux:8 \
 cd linkage && go test ./... && go build -o kernel-hw-linkage ./cmd/linkage
 
 # 3. 部署（见 ansible/README.md）
+# 3b. 按需检索硬件日志（每行: 主机 | 时间 | 类型 | 关键信息）
+ansible-playbook -i ansible/inventory/hosts.yml ansible/playbooks/retrieve-hardware-logs.yml
 # 4. 按类型一致性校验（接入 CI）
 bash tools/check-type-alignment.sh kernel-hw-mon/patterns.conf linkage/config.example.json
 ```

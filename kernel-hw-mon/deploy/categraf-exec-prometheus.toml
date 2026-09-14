@@ -1,0 +1,25 @@
+# Categraf exec 插件配置（prometheus 格式，推荐）
+#
+# 放置位置: <categraf>/conf/input.exec/kernel-hw-mon.toml
+# 前提:
+#   1. 脚本已安装到 /opt/kernel-hw-mon/kernel-hw-mon.sh 且可执行
+#   2. 规则文件在 /etc/kernel-hw-mon/patterns.conf
+#   3. 运行 Categraf 的用户对日志文件有读权限（见 README 权限方案）
+#   4. /var/lib/kernel-hw-mon 属主为 Categraf 运行用户
+#
+# 注意: exec 插件只要脚本向 stderr 写任何内容就会丢弃本次结果，
+#       本脚本已保证正常路径不写 stderr。
+
+[[instances]]
+commands = [
+    "/opt/kernel-hw-mon/kernel-hw-mon.sh --format prometheus --log-file /var/log/kernel-hw-errors.log --patterns /etc/kernel-hw-mon/patterns.conf --state-dir /var/lib/kernel-hw-mon"
+]
+timeout = 10
+data_format = "prometheus"
+
+# 若当前 Categraf 版本不支持实例级 interval，删除下一行，
+# 并改用全局 interval=60 或 systemd timer 方式。
+interval = "60s"
+
+# 可选标签，便于在 n9e 中筛选
+# labels = { source = "syslog", type = "kernel_hw" }

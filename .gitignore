@@ -1,0 +1,12 @@
+# 运行时产物
+ansible/reports/
+linkage/kernel-hw-linkage
+linkage/kernel-hw-linkage-linux-*
+linkage/kernel-hw-linkage-integration.test
+
+# 密钥（example 保留，真实文件不入库）
+ansible/inventory/group_vars/secrets.yml
+
+# 通用
+.DS_Store
+*.log

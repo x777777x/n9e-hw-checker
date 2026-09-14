@@ -1,0 +1,133 @@
+---
+# retrieve-hardware-logs.yml - 检索目标主机清单中的硬件问题日志
+#
+# 在 inventory 的 [monitored] 主机上扫描系统日志（优先专用日志 kernel-hw-errors.log，
+# 回退 /var/log/messages），按"主机 | 时间 | 类型 | 关键信息"逐行输出，并汇总到
+# <ansible>/reports/hardware-issues-report.txt。
+#
+# 用法:
+#   ansible-playbook -i inventory/hosts.yml playbooks/retrieve-hardware-logs.yml
+#   # 限制每台输出行数：
+#   ansible-playbook ... -e scan_since_max=200
+#
+# 说明:
+#   - 复用 kernel-hw-mon --scan 模式与 patterns.conf（单一事实源）。
+#   - 每行数据: 主机 | 日志时间 | 异常类型 | 日志关键信息。
+#   - 报表幂等：每次运行按当前结果重建，旧异常自动清除；汇总文件在 src 目录外。
+#   - 扫描失败（日志不可读/规则缺失）按失败处理，不会把错误指标当数据写进报表。
+
+- name: 检索各主机硬件问题日志
+  hosts: monitored
+  gather_facts: false
+  become: true
+  vars:
+    scan_log_files:
+      - /var/log/kernel-hw-errors.log
+      - /var/log/messages
+    scan_max: "{{ scan_since_max | default(0) | int }}"
+    report_root: "{{ playbook_dir }}/reports"
+    host_dir: "{{ report_root }}/hosts"
+    report_file: "{{ report_root }}/hardware-issues-report.txt"
+    scan_state_dir: /tmp/kernel-hw-mon-scan-state
+  tasks:
+    - name: 探测可用的日志文件
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      loop: "{{ scan_log_files }}"
+      register: _st
+
+    - name: 选择第一个存在的日志
+      ansible.builtin.set_fact:
+        scan_log: "{{ _st.results | selectattr('stat.exists') | map(attribute='item') | first | default('') }}"
+
+    - name: 确保本地报告目录存在（先于写文件）
+      ansible.builtin.file:
+        path: "{{ host_dir }}"
+        state: directory
+        mode: '0755'
+      delegate_to: localhost
+      become: false
+
+    - name: 拷贝扫描脚本
+      ansible.builtin.copy:
+        src: "{{ repo_root }}/kernel-hw-mon/kernel-hw-mon.sh"
+        dest: /tmp/kernel-hw-mon-scan.sh
+        mode: '0755'
+      when: scan_log != ''
+
+    - name: 拷贝规则文件
+      ansible.builtin.copy:
+        src: "{{ repo_root }}/kernel-hw-mon/patterns.conf"
+        dest: /tmp/kernel-hw-mon-patterns.conf
+        mode: '0644'
+      when: scan_log != ''
+
+    - name: 运行扫描（隔离 state 目录；失败即任务失败，不静默）
+      ansible.builtin.command:
+        cmd: >-
+          bash /tmp/kernel-hw-mon-scan.sh --scan -l {{ scan_log }}
+          -p /tmp/kernel-hw-mon-patterns.conf -s {{ scan_state_dir }}
+          {{ ((scan_max | int) > 0) | ternary('--scan-max ' ~ (scan_max | string), '') }}
+      register: _scan
+      changed_when: false
+      when: scan_log != ''
+
+    - name: "写入本机报告（每行: 主机 | 时间 | 类型 | 关键信息；重建式，清除旧行）"
+      ansible.builtin.copy:
+        dest: "{{ host_dir }}/{{ inventory_hostname }}.txt"
+        content: |
+          {% for l in (_scan.stdout_lines | default([])) %}{{ inventory_hostname }} | {{ l | regex_replace('\\t', ' | ') }}
+          {% endfor %}
+        mode: '0644'
+      delegate_to: localhost
+      become: false
+      when: scan_log != ''
+
+    - name: 无日志时清除本机旧报告
+      ansible.builtin.file:
+        path: "{{ host_dir }}/{{ inventory_hostname }}.txt"
+        state: absent
+      delegate_to: localhost
+      become: false
+      when: scan_log == ''
+
+    - name: 无日志或无异常的提示
+      ansible.builtin.debug:
+        msg: "{{ inventory_hostname }}: 无可用日志或未发现硬件异常"
+      when: scan_log == '' or (_scan.stdout_lines | default([]) | length) == 0
+
+- name: 汇总报告
+  hosts: localhost
+  gather_facts: false
+  vars:
+    report_root: "{{ playbook_dir }}/reports"
+    host_dir: "{{ report_root }}/hosts"
+    report_file: "{{ report_root }}/hardware-issues-report.txt"
+  tasks:
+    - name: 确保报告目录存在
+      ansible.builtin.file:
+        path: "{{ report_root }}"
+        state: directory
+        mode: '0755'
+
+    - name: 统计各主机报告
+      ansible.builtin.find:
+        paths: "{{ host_dir }}"
+        patterns: "*.txt"
+      register: _found
+
+    - name: 合并各主机报告（dest 在 src 目录之外，避免自并入）
+      ansible.builtin.assemble:
+        src: "{{ host_dir }}"
+        dest: "{{ report_file }}"
+        delimiter: "\n"
+        mode: '0644'
+      when: _found.files | length > 0
+
+    - name: 打印报告
+      ansible.builtin.debug:
+        var: report_content
+      vars:
+        report_content: >-
+          {{ lookup('file', report_file, errors='ignore')
+             | default('(无任何硬件异常)', true) }}

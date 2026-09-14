@@ -1,0 +1,14 @@
+# /etc/logrotate.d/kernel-hw-mon
+/var/log/kernel-hw-errors.log {
+    daily
+    rotate 7
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 0640 root categraf
+    su root categraf
+    postrotate
+        /usr/bin/systemctl kill -s HUP rsyslog 2>/dev/null || true
+    endscript
+}

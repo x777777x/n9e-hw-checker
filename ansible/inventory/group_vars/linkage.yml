@@ -1,0 +1,50 @@
+# 联动服务参数（非密钥；密钥见 inventory/group_vars/secrets.yml，Vault 加密）
+
+linkage_listen_addr: "0.0.0.0:8080"
+
+# ES
+linkage_es_addr: "http://es.example.com:9200"
+linkage_es_user: "readonly"
+linkage_es_index: "syslog-system"
+# 需与采集端 patterns.conf 的 include 类别对齐（联动服务按 type 精确查询）
+linkage_es_type_keywords:
+  nic: ["Link is Down", "NIC Link is Down", "link is not ready", "transmit queue timed out", "tx timeout", "transmit timeout", "Carrier is off", "NETDEV WATCHDOG", "Port Link Down"]
+  mem: ["EDAC MC", "Memory error", "Uncorrected Error", "Corrected error", "Machine Check", "mce", "Hardware Error", "MCG status"]
+  raid: ["megaraid", "MegaRAID", "I/O error", "Buffer I/O error", "blk_update_request", "SCSI error", "Medium Error", "MEDIUM ERROR", "Sense Key", "timing out command", "SMART Failure", "SMART error", "Failed SMART", "SMART Health Status: FAILED", "disk failure on", "Recovery FAILED", "controller reset", "adapter reset", "Link down on the controller", "nvme[0-9]*: controller is down", "nvme .* status: 0x", "CISS_CMD_STATUS", "bad block", "Unrecovered read error", "FAILED Result", "checker failed"]
+  cpu: ["Core temperature above threshold", "Package temperature above threshold", "Thermal event"]
+  bus: ["PCIe Bus Error", "AER", "DMAR", "ACPI Error", "PCI error", "Uncorrectable error"]
+  kernel: ["Oops", "Kernel panic", "BUG:", "general protection fault", "soft lockup", "hard LOCKUP", "hung task", "Call Trace", "RCU Stall"]
+  thermal: ["Critical temperature", "thermal.*critical", "overheat", "Power supply failed"]
+
+# 私有化 LLM（openai 兼容）
+linkage_llm_base_url: "http://llm.example.com/v1"
+linkage_llm_model: "deepseek-r1"
+linkage_llm_timeout_s: 30
+# 分析规则文件（与 agent skill 单一事实源），由角色从仓库拷贝
+linkage_prompt_file: "/etc/kernel-hw-linkage/prompts/analyze.txt"
+
+# 可选：告警直接交给外部 agent（加载 skill 检索+分析）
+linkage_agent_enabled: false
+linkage_agent_executor_url: ""
+linkage_agent_skill: "hw-alert-analyzer"
+linkage_agent_timeout_s: 120
+
+# 去重/合并/ES 窗口
+linkage_window_dedup_minutes: 10
+linkage_window_merge_seconds: 60
+linkage_window_es_lookback_min: 10
+linkage_window_max_lines: 50
+linkage_window_max_chars_per_line: 200
+linkage_window_max_concurrent: 5
+
+# ident(hostname) -> 服务器 IP 清单（ES 反查兜底）
+linkage_inventory:
+  host01: "10.0.0.11"
+
+# 通知通道（非密钥部分）
+linkage_notify_mail_host: ""
+linkage_notify_mail_port: 587
+linkage_notify_mail_from: ""
+linkage_notify_mail_to: []
+linkage_notify_unipro_base_url: ""
+linkage_notify_unipro_project_id: ""

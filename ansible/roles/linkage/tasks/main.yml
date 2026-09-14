@@ -1,0 +1,69 @@
+---
+- name: 创建运行用户
+  ansible.builtin.user:
+    name: "{{ linkage_user }}"
+    system: true
+    create_home: false
+    shell: /usr/sbin/nologin
+
+- name: 创建目录
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ linkage_user }}"
+    group: "{{ linkage_user }}"
+    mode: "0750"
+  loop:
+    - "{{ linkage_install_dir }}/bin"
+    - "/var/lib/kernel-hw-linkage"
+    - "/etc/kernel-hw-linkage/prompts"
+
+- name: 拷贝分析规则（与 agent skill 单一事实源）
+  ansible.builtin.copy:
+    src: "{{ repo_root }}/linkage/prompts/analyze.txt"
+    dest: "{{ linkage_prompt_file }}"
+    owner: "{{ linkage_user }}"
+    group: "{{ linkage_user }}"
+    mode: "0640"
+  notify: restart kernel-hw-linkage
+
+- name: 拷贝二进制（需先本地构建：cd linkage && go build -o kernel-hw-linkage ./cmd/linkage）
+  ansible.builtin.copy:
+    src: "{{ repo_root }}/linkage/kernel-hw-linkage"
+    dest: "{{ linkage_install_dir }}/bin/kernel-hw-linkage"
+    owner: "{{ linkage_user }}"
+    group: "{{ linkage_user }}"
+    mode: "0750"
+  notify: restart kernel-hw-linkage
+
+- name: 渲染配置（含密钥，权限 0600）
+  ansible.builtin.template:
+    src: config.json.j2
+    dest: "{{ linkage_config_path }}"
+    owner: "{{ linkage_user }}"
+    group: "{{ linkage_user }}"
+    mode: "0600"
+  notify: restart kernel-hw-linkage
+
+- name: 渲染 systemd unit
+  ansible.builtin.template:
+    src: kernel-hw-linkage.service.j2
+    dest: /etc/systemd/system/kernel-hw-linkage.service
+    mode: "0644"
+  notify: restart kernel-hw-linkage
+
+- name: 启用并启动服务
+  ansible.builtin.systemd:
+    name: kernel-hw-linkage
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: 等待健康检查通过
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ linkage_listen_addr | regex_replace('.*:(\\d+)$', '\\1') }}/healthz"
+    return_content: true
+  register: _hc
+  until: _hc.status == 200
+  retries: 10
+  delay: 1

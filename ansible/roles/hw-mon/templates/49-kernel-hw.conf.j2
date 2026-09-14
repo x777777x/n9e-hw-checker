@@ -1,0 +1,24 @@
+# /etc/rsyslog.d/49-kernel-hw.conf
+# 内核及常见硬件守护进程日志额外写入专用文件，供监控以非 root 读取。
+# 不阻断原有写入 /var/log/messages 的行为。
+
+if ($syslogfacility-text == 'kern')
+   or ($programname == 'kernel')
+   or ($programname == 'mcelog')
+   or ($programname == 'smartd')
+   or ($programname == 'smartctl')
+   or ($programname == 'rasdaemon')
+   or ($programname == 'ras-mc-ctl')
+   or ($programname == 'mdadm')
+   or ($programname == 'ipmi')
+   or ($programname == 'ipmievd')
+   or ($programname == 'ipmitool')
+   or ($programname == 'megaraid')
+   or ($programname == 'megacli')
+   or ($programname == 'storcli') then {
+    action(type="omfile"
+           file="{{ hw_mon_log_file }}"
+           fileOwner="root"
+           fileGroup="{{ hw_mon_user }}"
+           fileCreateMode="0640")
+}

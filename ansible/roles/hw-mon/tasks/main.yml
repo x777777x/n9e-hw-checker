@@ -1,0 +1,61 @@
+---
+- name: 创建运行用户（categraf）
+  ansible.builtin.user:
+    name: "{{ hw_mon_user }}"
+    system: true
+    create_home: false
+    shell: /usr/sbin/nologin
+
+- name: 创建状态目录（运行用户独占）
+  ansible.builtin.file:
+    path: "{{ hw_mon_state_dir }}"
+    state: directory
+    owner: "{{ hw_mon_user }}"
+    group: "{{ hw_mon_user }}"
+    mode: "0750"
+
+- name: 拷贝检测脚本
+  ansible.builtin.copy:
+    src: "{{ repo_root }}/kernel-hw-mon/kernel-hw-mon.sh"
+    dest: "{{ hw_mon_script_path }}"
+    mode: "0755"
+
+- name: 拷贝规则文件
+  ansible.builtin.copy:
+    src: "{{ repo_root }}/kernel-hw-mon/patterns.conf"
+    dest: "{{ hw_mon_patterns_path }}"
+    mode: "0644"
+
+- name: rsyslog 专用日志输出规则
+  ansible.builtin.template:
+    src: 49-kernel-hw.conf.j2
+    dest: /etc/rsyslog.d/49-kernel-hw.conf
+    mode: "0644"
+  notify: restart rsyslog
+
+- name: logrotate 规则
+  ansible.builtin.template:
+    src: kernel-hw-mon.logrotate.j2
+    dest: /etc/logrotate.d/kernel-hw-mon
+    mode: "0644"
+
+- name: Categraf exec 采集配置（可选）
+  ansible.builtin.template:
+    src: kernel-hw-mon-exec.toml.j2
+    dest: "{{ hw_mon_categraf_conf_dir }}/kernel-hw-mon.toml"
+    mode: "0644"
+  when: hw_mon_categraf_conf_dir != ""
+  notify: restart categraf
+
+- name: 确保 rsyslog 运行
+  ansible.builtin.systemd:
+    name: rsyslog
+    enabled: true
+    state: started
+
+- name: 确保 categraf 运行
+  ansible.builtin.systemd:
+    name: categraf
+    enabled: true
+    state: started
+  when: hw_mon_categraf_conf_dir != ""

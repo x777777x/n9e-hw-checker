@@ -1,0 +1,20 @@
+[Unit]
+Description=Kernel HW alert linkage service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User={{ linkage_user }}
+Group={{ linkage_user }}
+ExecStart={{ linkage_install_dir }}/bin/kernel-hw-linkage --config {{ linkage_config_path }}
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/var/lib/kernel-hw-linkage
+
+[Install]
+WantedBy=multi-user.target

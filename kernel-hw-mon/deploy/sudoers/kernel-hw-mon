@@ -1,0 +1,11 @@
+# /etc/sudoers.d/kernel-hw-mon
+#
+# 备选方案: 若坚持直接读取 /var/log/messages 且不修改 rsyslog，
+# 给 Categraf 运行用户最小化授权。
+#
+# 安全说明: sudoers 无法约束命令参数，绝不能直接放行 kernel-hw-mon.sh
+# （否则 categraf 可携带 -s/-t/-m 等参数以 root 读写任意路径）。
+# 只放行固定参数的 wrapper（deploy/sudoers/kernel-hw-mon-wrapper.sh）。
+
+Defaults:categraf !requiretty
+categraf ALL=(root) NOPASSWD: /etc/kernel-hw-mon/kernel-hw-mon-wrapper.sh

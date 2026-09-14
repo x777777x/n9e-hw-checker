@@ -1,0 +1,5 @@
+---
+- name: 一键部署：采集端 + 联动服务
+  import_playbook: deploy-monitor.yml
+- name: 联动服务
+  import_playbook: deploy-linkage.yml

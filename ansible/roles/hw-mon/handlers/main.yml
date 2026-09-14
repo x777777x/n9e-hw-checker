@@ -1,0 +1,10 @@
+---
+- name: restart rsyslog
+  ansible.builtin.systemd:
+    name: rsyslog
+    state: restarted
+
+- name: restart categraf
+  ansible.builtin.systemd:
+    name: categraf
+    state: restarted

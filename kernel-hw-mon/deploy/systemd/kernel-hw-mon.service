@@ -1,0 +1,21 @@
+[Unit]
+Description=Kernel/hardware error log monitor (node_exporter textfile output)
+Documentation=file:/opt/kernel-hw-mon/README.md
+After=local-fs.target
+
+[Service]
+Type=oneshot
+User=categraf
+Group=categraf
+ExecStart=/opt/kernel-hw-mon/kernel-hw-mon.sh \
+    --format textfile \
+    --log-file /var/log/kernel-hw-errors.log \
+    --patterns /etc/kernel-hw-mon/patterns.conf \
+    --state-dir /var/lib/kernel-hw-mon \
+    --textfile-dir /var/lib/node_exporter/textfile_collector
+Nice=10
+IOSchedulingClass=idle
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=full

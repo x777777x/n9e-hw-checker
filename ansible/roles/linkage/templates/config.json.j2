@@ -1,0 +1,52 @@
+{
+  "server": {
+    "addr": "{{ linkage_listen_addr }}",
+    "token": "{{ linkage_webhook_token }}"
+  },
+  "es": {
+    "addr": "{{ linkage_es_addr }}",
+    "user": "{{ linkage_es_user }}",
+    "pass": "{{ linkage_es_pass }}",
+    "index": "{{ linkage_es_index }}",
+    "type_keywords": {{ linkage_es_type_keywords | to_json }}
+  },
+  "llm": {
+    "base_url": "{{ linkage_llm_base_url }}",
+    "model": "{{ linkage_llm_model }}",
+    "api_key": "{{ linkage_llm_api_key }}",
+    "timeout_s": {{ linkage_llm_timeout_s }},
+    "prompt_file": "{{ linkage_prompt_file }}"
+  },
+  "agent": {
+    "enabled": {{ linkage_agent_enabled | bool | lower }},
+    "executor_url": "{{ linkage_agent_executor_url }}",
+    "skill": "{{ linkage_agent_skill }}",
+    "timeout_s": {{ linkage_agent_timeout_s }}
+  },
+  "resolve": {
+    "inventory": {{ linkage_inventory | to_json }}
+  },
+  "window": {
+    "dedup_minutes": {{ linkage_window_dedup_minutes }},
+    "merge_seconds": {{ linkage_window_merge_seconds }},
+    "es_lookback_min": {{ linkage_window_es_lookback_min }},
+    "max_lines": {{ linkage_window_max_lines }},
+    "max_chars_per_line": {{ linkage_window_max_chars_per_line }},
+    "max_concurrent": {{ linkage_window_max_concurrent }}
+  },
+  "notify": {
+    "wecom": { "webhook_url": "{{ linkage_wecom_webhook_url }}" },
+    "mail": {
+      "smtp_host": "{{ linkage_notify_mail_host }}",
+      "smtp_port": {{ linkage_notify_mail_port }},
+      "from": "{{ linkage_notify_mail_from }}",
+      "pass": "{{ linkage_smtp_pass }}",
+      "to": {{ linkage_notify_mail_to | default([]) | to_json }}
+    },
+    "unipro": {
+      "base_url": "{{ linkage_notify_unipro_base_url }}",
+      "token": "{{ linkage_unipro_token }}",
+      "project_id": "{{ linkage_notify_unipro_project_id }}"
+    }
+  }
+}

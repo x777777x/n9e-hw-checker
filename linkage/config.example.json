@@ -1,0 +1,52 @@
+{
+  "server": {
+    "addr": ":8080",
+    "token": "CHANGE-ME-WEBHOOK-TOKEN"
+  },
+  "es": {
+    "addr": "http://es.example.com:9200",
+    "user": "readonly",
+    "pass": "",
+    "index": "syslog-system",
+    "type_keywords": {
+      "nic": ["Link is Down", "NIC Link is Down", "link is not ready", "transmit queue timed out", "tx timeout", "transmit timeout", "Carrier is off", "NETDEV WATCHDOG", "Port Link Down"],
+      "mem": ["EDAC MC", "Memory error", "Uncorrected Error", "Corrected error", "Machine Check", "mce", "Hardware Error", "MCG status"],
+      "raid": ["megaraid", "MegaRAID", "I/O error", "Buffer I/O error", "blk_update_request", "SCSI error", "Medium Error", "MEDIUM ERROR", "Sense Key", "timing out command", "SMART Failure", "SMART error", "Failed SMART", "SMART Health Status: FAILED", "disk failure on", "Recovery FAILED", "controller reset", "adapter reset", "Link down on the controller", "nvme[0-9]*: controller is down", "nvme .* status: 0x", "CISS_CMD_STATUS", "bad block", "Unrecovered read error", "FAILED Result", "checker failed"],
+      "cpu": ["Core temperature above threshold", "Package temperature above threshold", "Thermal event"],
+      "bus": ["PCIe Bus Error", "AER", "DMAR", "ACPI Error", "PCI error", "Uncorrectable error"],
+      "kernel": ["Oops", "Kernel panic", "BUG:", "general protection fault", "soft lockup", "hard LOCKUP", "hung task", "Call Trace", "RCU Stall"],
+      "thermal": ["Critical temperature", "thermal.*critical", "overheat", "Power supply failed"]
+    }
+  },
+  "llm": {
+    "base_url": "http://llm.example.com/v1",
+    "model": "deepseek-r1",
+    "api_key": "",
+    "timeout_s": 30,
+    "prompt_file": "/etc/kernel-hw-linkage/prompts/analyze.txt"
+  },
+  "agent": {
+    "enabled": false,
+    "executor_url": "",
+    "skill": "hw-alert-analyzer",
+    "timeout_s": 120
+  },
+  "resolve": {
+    "inventory": {
+      "host01": "10.0.0.11"
+    }
+  },
+  "window": {
+    "dedup_minutes": 10,
+    "merge_seconds": 60,
+    "es_lookback_min": 10,
+    "max_lines": 50,
+    "max_chars_per_line": 200,
+    "max_concurrent": 5
+  },
+  "notify": {
+    "wecom": { "webhook_url": "" },
+    "mail": { "smtp_host": "", "smtp_port": 587, "from": "", "pass": "", "to": [] },
+    "unipro": { "base_url": "", "token": "", "project_id": "" }
+  }
+}

@@ -1,0 +1,17 @@
+# 全局参数（非密钥）
+# 仓库根目录：playbook_dir = <repo>/ansible/playbooks → dirname → <repo>/ansible → dirname → <repo>
+repo_root: "{{ playbook_dir | dirname | dirname }}"
+
+# ---------- 采集端 kernel-hw-mon ----------
+hw_mon_user: categraf
+hw_mon_script_path: /opt/kernel-hw-mon/kernel-hw-mon.sh
+hw_mon_patterns_path: /etc/kernel-hw-mon/patterns.conf
+hw_mon_state_dir: /var/lib/kernel-hw-mon
+hw_mon_log_file: /var/log/kernel-hw-errors.log
+# 留空则跳过 Categraf exec 配置（可选）
+hw_mon_categraf_conf_dir: ""
+
+# ---------- 联动服务 ----------
+linkage_user: linkage
+linkage_install_dir: /opt/kernel-hw-linkage
+linkage_config_path: /etc/kernel-hw-linkage/config.json
